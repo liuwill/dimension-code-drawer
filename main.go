@@ -53,17 +53,44 @@ func buildCircle(d int) image.Image {
 	return img
 }
 
+// func buildCircleMiddle(radius int) image.Image {
+// 	img := image.NewRGBA(image.Rect(0, 0, radius*2, radius*2))
+
+// 	x, y := 0, radius
+// 	d := 3 - 2*radius
+// 	for x < y {
+// 		if d < 0 {
+// 			d = d + 4*x + 6
+// 		} else {
+// 			d = d + 4*(x-y) + 10
+// 			y--
+// 		}
+// 		x++
+// 		img.Set(x, y, black)
+// 	}
+// 	return img
+// }
+
 func paintDataCircle(radius int, bits []int) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, radius*2, radius*2))
+
 	for i := 0.0; i < 360; i += 0.05 {
 		x := float64(radius) + float64(radius)*math.Cos(float64(i)*math.Pi/180)
 		y := float64(radius) + float64(radius)*math.Sin(float64(i)*math.Pi/180)
 
-		img.Set(int(x), int(y), black)
+		color := black
+		if bits != nil && len(bits) > 0 {
+			pos := int(i * float64(len(bits)) / 360)
+			if bits[pos] == 0 {
+				color = white
+			}
+		}
+
+		img.Set(int(x), int(y), color)
+
 		x1 := float64(radius+1) + float64(radius+1)*math.Cos(i*math.Pi/180)
 		y1 := float64(radius+1) + float64(radius+1)*math.Sin(i*math.Pi/180)
-		img.Set(int(x), int(y), black)
-		img.Set(int(x1), int(y1), black)
+		img.Set(int(x1), int(y1), color)
 	}
 	return img
 }
@@ -81,7 +108,7 @@ func main() {
 	draw.Draw(target, target.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
 
 	// draw a line
-	// for i := target.Bounds().Min.X + 10; i < target.Bounds().Max.X-10; i++ {
+	// for i := target.Bounds().Min.X + 10 i < target.Bounds().Max.X-10 i++ {
 	// 	target.Set(i, target.Bounds().Max.Y/2, black) // to change a single pixel
 	// }
 
@@ -90,17 +117,31 @@ func main() {
 	logoPos := center - logo.Bounds().Max.Y/2
 	draw.Draw(target, target.Bounds(), logo, image.Point{X: -logoPos, Y: -logoPos}, draw.Over)
 
-	for _, radius := range []int{90, 110, 130, 150, 185} {
-		line := paintDataCircle(radius, nil)
+	dataList := [][]int{
+		nil,
+		{1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1},
+		{1, 1, 0, 0, 1, 1, 0, 1},
+		{1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1},
+	}
+	for i, radius := range []int{90, 110, 130, 150, 185} {
+		data := []int{}
+		if i < len(dataList) {
+			data = dataList[i]
+		}
+
+		line := paintDataCircle(radius, data)
 		draw.Draw(target, target.Bounds(), line, image.Point{X: -(center - radius), Y: -(center - radius)}, draw.Over)
 	}
 
 	leftPos := -60
-	rightPos := -size - leftPos + 30
-	circle := buildCircle(30)
+	rightPos := -size - leftPos + 40
+	circle := buildCircle(40)
 	draw.Draw(target, target.Bounds(), circle, image.Point{X: leftPos, Y: leftPos}, draw.Over)
 	draw.Draw(target, target.Bounds(), circle, image.Point{X: leftPos, Y: rightPos}, draw.Over)
 	draw.Draw(target, target.Bounds(), circle, image.Point{X: rightPos, Y: rightPos}, draw.Over)
+
+	mark := buildCircle(80)
+	draw.Draw(target, target.Bounds(), mark, image.Point{X: -size - leftPos + 70, Y: leftPos + 20}, draw.Over)
 
 	w, _ := os.Create("qrcode.png")
 	defer w.Close()
