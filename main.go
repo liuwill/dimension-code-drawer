@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"image/png"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 )
@@ -33,6 +34,40 @@ func loadImageObj() (img image.Image, err error) {
 	return img, nil
 }
 
+func buildCircle(d int) image.Image {
+	img := image.NewRGBA(image.Rect(0, 0, d, d))
+
+	radius := d / 2
+	for i := 0.0; i < 360; i += 0.05 {
+		x := float64(radius) + float64(radius)*math.Cos(i*math.Pi/180)
+		y := float64(radius) + float64(radius)*math.Sin(i*math.Pi/180)
+
+		x1 := float64(radius+1) + float64(radius+1)*math.Cos(i*math.Pi/180)
+		y1 := float64(radius+1) + float64(radius+1)*math.Sin(i*math.Pi/180)
+		img.Set(int(x), int(y), black)
+		img.Set(int(x1), int(y1), black)
+	}
+
+	img.Set(int(d/2), int(d/2), black)
+
+	return img
+}
+
+func paintDataCircle(radius int, bits []int) image.Image {
+	img := image.NewRGBA(image.Rect(0, 0, radius*2, radius*2))
+	for i := 0.0; i < 360; i += 0.05 {
+		x := float64(radius) + float64(radius)*math.Cos(float64(i)*math.Pi/180)
+		y := float64(radius) + float64(radius)*math.Sin(float64(i)*math.Pi/180)
+
+		img.Set(int(x), int(y), black)
+		x1 := float64(radius+1) + float64(radius+1)*math.Cos(i*math.Pi/180)
+		y1 := float64(radius+1) + float64(radius+1)*math.Sin(i*math.Pi/180)
+		img.Set(int(x), int(y), black)
+		img.Set(int(x1), int(y1), black)
+	}
+	return img
+}
+
 func main() {
 	logo, err := loadImageObj()
 	if err != nil {
@@ -50,8 +85,22 @@ func main() {
 	// 	target.Set(i, target.Bounds().Max.Y/2, black) // to change a single pixel
 	// }
 
-	logoPos := size/2 - logo.Bounds().Max.Y/2
+	// angle := math.Sqrt(float64(size * size * 2))
+	center := int(size / 2)
+	logoPos := center - logo.Bounds().Max.Y/2
 	draw.Draw(target, target.Bounds(), logo, image.Point{X: -logoPos, Y: -logoPos}, draw.Over)
+
+	for _, radius := range []int{90, 110, 130, 150, 185} {
+		line := paintDataCircle(radius, nil)
+		draw.Draw(target, target.Bounds(), line, image.Point{X: -(center - radius), Y: -(center - radius)}, draw.Over)
+	}
+
+	leftPos := -60
+	rightPos := -size - leftPos + 30
+	circle := buildCircle(30)
+	draw.Draw(target, target.Bounds(), circle, image.Point{X: leftPos, Y: leftPos}, draw.Over)
+	draw.Draw(target, target.Bounds(), circle, image.Point{X: leftPos, Y: rightPos}, draw.Over)
+	draw.Draw(target, target.Bounds(), circle, image.Point{X: rightPos, Y: rightPos}, draw.Over)
 
 	w, _ := os.Create("qrcode.png")
 	defer w.Close()
