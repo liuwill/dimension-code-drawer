@@ -1,0 +1,9 @@
+cover.out
+coverage.txt
+coverage.html
+*/*.test
+*/*.ignore
+*/**/.gitignore
+dist/
+MEMO.md
+*/*.go_
